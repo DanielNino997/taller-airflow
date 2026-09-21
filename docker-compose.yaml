@@ -74,6 +74,17 @@ services:
       - "8080:8080"
     restart: always
 
+  api:
+    build: ./api
+    container_name: taller_api
+    environment:
+      MODEL_PATH: /app/models/modelo_penguins.pkl
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/app/models
+    restart: always
+
 volumes:
   mysql-data:
   postgres-data:

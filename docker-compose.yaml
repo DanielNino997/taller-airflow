@@ -1,3 +1,24 @@
+x-airflow-common: &airflow-common
+  image: apache/airflow:2.9.3-python3.11
+  environment:
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/${POSTGRES_DB}
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    MYSQL_CONN_STR: mysql+pymysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE}
+    _PIP_ADDITIONAL_REQUIREMENTS: pymysql cryptography scikit-learn pandas joblib
+  volumes:
+    - ./dags:/opt/airflow/dags
+    - ./logs:/opt/airflow/logs
+    - ./plugins:/opt/airflow/plugins
+    - ./data:/opt/airflow/data
+    - ./models:/opt/airflow/models
+  user: "${AIRFLOW_UID}:0"
+  depends_on:
+    postgres:
+      condition: service_healthy
+    mysql:
+      condition: service_healthy
+
 services:
 
   mysql:
@@ -32,6 +53,26 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  airflow-init:
+    <<: *airflow-common
+    container_name: taller_airflow_init
+    command: bash -c "airflow db migrate && airflow users create --username airflow --password airflow --firstname Daniel --lastname Nino --role Admin --email admin@example.com"
+    restart: "no"
+
+  airflow-scheduler:
+    <<: *airflow-common
+    container_name: taller_airflow_scheduler
+    command: scheduler
+    restart: always
+
+  airflow-webserver:
+    <<: *airflow-common
+    container_name: taller_airflow_webserver
+    command: webserver
+    ports:
+      - "8080:8080"
+    restart: always
 
 volumes:
   mysql-data:

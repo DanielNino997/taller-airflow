@@ -1,0 +1,5 @@
+.env
+logs/*
+!logs/.gitkeep
+models/*.pkl
+__pycache__/
